@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#10303a">
+  <title>Banana Blast 3D</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%8D%8C%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/style.css">
+  <script type="importmap">{ "imports": { "three": "/vendor/three/three.module.js" } }</script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ MAIN MENU ============ -->
+  <section id="screen-menu" class="screen active" aria-label="Main menu">
+    <div class="menu-card">
+      <svg class="logo-banana" viewBox="0 0 120 90" aria-hidden="true">
+        <path d="M14 20 C 20 70, 80 88, 112 52 C 96 66, 56 70, 36 44 C 30 36, 28 26, 30 14 Z" fill="#ffd43b" stroke="#6b4a12" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="26" cy="12" r="6" fill="#6b4a12"/>
+        <circle cx="44" cy="52" r="3.5" fill="#1b1b2f"/><circle cx="58" cy="58" r="3.5" fill="#1b1b2f"/>
+      </svg>
+      <h1 class="logo">Banana Blast <span>3D</span></h1>
+      <p class="tagline">Blow up crates. Outlast your friends.</p>
+
+      <label class="field">
+        <span>Your nickname</span>
+        <input id="nick-input" type="text" maxlength="12" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Monkey">
+      </label>
+
+      <button id="btn-create" class="btn btn-primary" type="button">Create room</button>
+
+      <div class="or"><span>or join friends</span></div>
+
+      <div class="join-row">
+        <input id="code-input" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="CODE" aria-label="Room code">
+        <button id="btn-join" class="btn btn-secondary" type="button">Join room</button>
+      </div>
+
+      <div class="menu-links">
+        <button id="btn-howto" class="link-btn" type="button">How to play</button>
+        <button id="btn-settings" class="link-btn" type="button">Settings</button>
+      </div>
+
+      <p id="menu-status" class="status"><i class="dot"></i><span id="menu-status-text">Connecting…</span></p>
+      <p id="menu-error" class="form-error" role="alert" hidden></p>
+    </div>
+  </section>
+
+  <!-- ============ LOBBY ============ -->
+  <section id="screen-lobby" class="screen" aria-label="Lobby">
+    <div class="lobby-card">
+      <p class="small">Room code</p>
+      <div id="lobby-code" class="code-big" aria-live="polite">----</div>
+      <div class="row">
+        <button id="btn-copy-code" class="btn btn-small btn-secondary" type="button">Copy code</button>
+        <button id="btn-copy-link" class="btn btn-small btn-secondary" type="button">Copy invite link</button>
+      </div>
+
+      <h2 class="lobby-count"><span id="lobby-count">1/4</span> players</h2>
+      <ul id="lobby-players" class="player-list"></ul>
+
+      <p id="lobby-hint" class="hint"></p>
+      <div class="row row-stack">
+        <button id="btn-ready" class="btn btn-primary" type="button">Ready</button>
+        <button id="btn-start" class="btn btn-accent" type="button" hidden>Start match</button>
+        <button id="btn-leave" class="btn btn-ghost" type="button">Leave room</button>
+      </div>
+      <p id="lobby-status" class="status"><i class="dot"></i><span id="lobby-status-text">Connected</span></p>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="screen-game" class="screen" aria-label="Game">
+    <canvas id="gl"></canvas>
+
+    <div id="hud" class="hud">
+      <div class="hud-top">
+        <div id="hud-players" class="hud-players"></div>
+        <div class="hud-center">
+          <div id="hud-timer" class="hud-timer">3:00</div>
+          <div id="hud-alive" class="hud-alive">4 alive</div>
+        </div>
+        <div class="hud-right">
+          <div id="hud-net" class="hud-net"><i class="dot"></i><span id="hud-net-text">--</span></div>
+          <button id="btn-menu" class="btn btn-icon" type="button" aria-label="Menu">Menu</button>
+        </div>
+      </div>
+      <div id="hud-stats" class="hud-stats">
+        <span class="chip" id="stat-bombs" title="Bombs">Bombs 0/1</span>
+        <span class="chip" id="stat-range" title="Blast range">Range 2</span>
+        <span id="stat-effects" class="effects"></span>
+      </div>
+      <div id="spectate" class="spectate" hidden>You are out. Spectating…</div>
+    </div>
+
+    <div id="overlay-center" class="overlay-center" aria-live="assertive" hidden></div>
+    <div id="banner" class="banner" aria-live="polite" hidden></div>
+
+    <div id="controls" class="controls">
+      <div id="joy-zone" class="joy-zone">
+        <div id="joy-base" class="joy-base" hidden><div id="joy-knob" class="joy-knob"></div></div>
+        <span class="joy-hint">Drag to move</span>
+      </div>
+      <div class="buttons">
+        <button id="btn-det" class="act act-det" type="button" hidden>Boom</button>
+        <button id="btn-trap" class="act act-trap" type="button" hidden>Peel</button>
+        <button id="btn-bomb" class="act act-bomb" type="button">Bomb</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="screen-results" class="screen" aria-label="Results">
+    <div class="results-card">
+      <h2 id="result-title" class="result-title">Winner</h2>
+      <p id="result-sub" class="small"></p>
+      <ol id="result-list" class="result-list"></ol>
+      <p id="results-wait" class="hint" hidden>Waiting for the host…</p>
+      <div class="row row-stack">
+        <button id="btn-rematch" class="btn btn-primary" type="button" hidden>Rematch</button>
+        <button id="btn-lobby" class="btn btn-secondary" type="button" hidden>Back to lobby</button>
+        <button id="btn-results-leave" class="btn btn-ghost" type="button">Leave room</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODALS ============ -->
+  <div id="modal-howto" class="modal" role="dialog" aria-modal="true" aria-labelledby="howto-title" hidden>
+    <div class="modal-card">
+      <h2 id="howto-title">How to play</h2>
+      <ul class="howto">
+        <li>Be the last banana standing. Blast crates, dodge flames, trap your friends.</li>
+        <li><b>Move:</b> drag the left side of the screen, or use WASD / arrow keys.</li>
+        <li><b>Bomb:</b> the Bomb button or Space. Bombs explode after 2.5 seconds in a cross shape. Walls stop the blast, crates break it.</li>
+        <li><b>Red tiles</b> show where flames are about to land. Bombs chain into each other.</li>
+        <li><b>Power-ups from crates:</b> extra bomb, bigger blast, speed boost, shield (blocks one hit), remote detonator (Boom button or E), banana peel trap (Peel button or Q), bomb kick (walk into a bomb to push it).</li>
+        <li>Matches last up to 3 minutes. If time runs out with several players alive, it is a draw.</li>
+        <li>If you lose connection mid-match you have 20 seconds to come back before you are knocked out.</li>
+      </ul>
+      <button class="btn btn-primary modal-close" type="button">Got it</button>
+    </div>
+  </div>
+
+  <div id="modal-settings" class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div class="modal-card">
+      <h2 id="settings-title">Settings</h2>
+      <label class="toggle"><input id="set-sound" type="checkbox"> <span>Sound effects</span></label>
+      <label class="toggle"><input id="set-shake" type="checkbox"> <span>Screen shake</span></label>
+      <label class="toggle"><input id="set-motion" type="checkbox"> <span>Reduce motion (less bobbing, confetti, shake)</span></label>
+      <label class="field">
+        <span>Graphics quality</span>
+        <select id="set-quality">
+          <option value="auto">Auto</option>
+          <option value="low">Low (best battery)</option>
+          <option value="high">High (shadows)</option>
+        </select>
+      </label>
+      <button class="btn btn-primary modal-close" type="button">Done</button>
+    </div>
+  </div>
+
+  <div id="modal-menu" class="modal" role="dialog" aria-modal="true" aria-labelledby="menu-title" hidden>
+    <div class="modal-card">
+      <h2 id="menu-title">Paused menu</h2>
+      <p class="small">The match keeps running for everyone else.</p>
+      <button id="btn-resume" class="btn btn-primary" type="button">Back to the game</button>
+      <button id="btn-menu-settings" class="btn btn-secondary" type="button">Settings</button>
+      <button id="btn-menu-howto" class="btn btn-secondary" type="button">How to play</button>
+      <button id="btn-menu-leave" class="btn btn-ghost" type="button">Leave match</button>
+    </div>
+  </div>
+
+  <div id="conn-banner" class="conn-banner" role="status" hidden>Connection lost. Reconnecting…</div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div id="fatal" class="fatal" role="alert" hidden></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>

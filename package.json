@@ -1,0 +1,21 @@
+{
+  "name": "banana-blast-3d",
+  "version": "1.0.0",
+  "description": "Banana Blast 3D - a 2-4 player online 3D bomb-arena party game (Three.js + Node.js + Express + Socket.IO)",
+  "main": "server.js",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "check": "node scripts/static-check.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "three": "~0.170.0"
+  }
+}
